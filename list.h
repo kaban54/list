@@ -35,7 +35,9 @@ struct ListElem_t
 struct List_t
 {
     ListInfo_t info;
-    int status; 
+    int status;
+    int happy;
+    int shift;
     int err;
     int capacity;
 
@@ -64,7 +66,7 @@ enum LISTSTATUS
 };
 
 
-#define ListCtor(list, capacity) List_constructor (list, capacity, #list, __PRETTY_FUNCTION__, __FILE__, __LINE__)
+#define ListCtor(list, capacity) List_ctor (list, capacity, #list, __PRETTY_FUNCTION__, __FILE__, __LINE__)
 
 #define ListTxtDump(list, stream) List_txt_dmup (list, stream, __PRETTY_FUNCTION__, __FILE__, __LINE__)
 
@@ -78,13 +80,17 @@ enum LISTSTATUS
 #define ListPrintError(list) List_print_error (list, __PRETTY_FUNCTION__, __FILE__, __LINE__)
                          
 
-int List_constructor (List_t *list, int capacity, const char *name, const char *func_name, const char *file_name, int line);
+int List_ctor (List_t *list, int capacity, const char *name, const char *func_name, const char *file_name, int line);
 
 int ListSetInfo (List_t *list, const char *name, const char *func_name, const char *file_name, int line);
 
 int ListConstructData (List_t *list, int capacity);
 
 int ListDtor (List_t *list);
+
+int ListGetHead (List_t *list, int *head);
+
+int ListGetTail (List_t *list, int *tail);
 
 int ListInsertVal (List_t *list, int prev, val_t value);
 
@@ -93,6 +99,8 @@ int ListInsertHead (List_t *list, val_t value);
 int ListInsertTail (List_t *list, val_t value);
 
 int ListPopVal (List_t *list, int index, val_t *value);
+
+int ListLinearize (List_t *list);
 
 int ListExpand (List_t *list, int capacity);
 

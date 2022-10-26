@@ -2,7 +2,7 @@
 
 
 
-int List_constructor (List_t *list, int capacity, const char *name, const char *func_name, const char *file_name, int line)
+int List_ctor (List_t *list, int capacity, const char *name, const char *func_name, const char *file_name, int line)
 {
     if (list == nullptr) return LIST_NULLPTR_ARG;
 
@@ -17,6 +17,8 @@ int List_constructor (List_t *list, int capacity, const char *name, const char *
 
     list -> err |= ListConstructData (list, capacity);
 
+    list -> happy  = 1;
+    list -> shift  = 0;
     list -> status = LIST_CONSTRUCTED;
 
     ListVerify (list);
@@ -45,7 +47,7 @@ int ListConstructData (List_t *list, int capacity)
     if (list -> data == nullptr)
     {
         list -> err |= LIST_ALLOC_ERROR;
-        return LIST_ALLOC_ERROR;
+        return list -> err;
     }
 
     list -> capacity = capacity;
@@ -83,6 +85,25 @@ int ListDtor (List_t *list)
 }
 
 
+int ListGetHead (List_t *list, int *head)
+{
+    ListVerify (list);
+    if (head == nullptr) return LIST_NULLPTR_ARG;
+
+    *head = list -> data [0].next;
+    return LIST_OK;
+}
+
+int ListGetTail (List_t *list, int *tail)
+{
+    ListVerify (list);
+    if (tail == nullptr) return LIST_NULLPTR_ARG;
+
+    *tail = list -> data [0].prev;
+    return LIST_OK;
+}
+
+
 int ListInsertVal (List_t *list, int prev, val_t value)
 {
     ListVerify (list);
@@ -111,6 +132,12 @@ int ListInsertVal (List_t *list, int prev, val_t value)
     list -> data [next].prev = index;
     list -> data [prev].next = index;
 
+    if (list -> happy)
+    {
+        if      (prev == 0 && next == index + 1) list -> shift -= 1;
+        else if (next != 0)                      list -> happy  = 0;
+    }
+
     ListVerify (list);
     return LIST_OK;
 }
@@ -122,8 +149,7 @@ int ListInsertHead (List_t *list, val_t value)
 }
 
 int ListInsertTail (List_t *list, val_t value)
-{
-    
+{   
     ListVerify (list);
     return ListInsertVal (list, list -> data[0].prev, value);
 }
@@ -152,10 +178,63 @@ int ListPopVal (List_t *list, int index, val_t *value)
     list -> data [index].next = list -> free;
     list -> free = index;
 
+    if (list -> happy)
+    {
+        if      (prev == 0) list -> shift += 1;
+        else if (next != 0) list -> happy  = 0;
+    }
+
     ListVerify (list);
     return LIST_OK;
 }
 
+
+int ListLinearize (List_t *list)
+{
+    ListVerify (list);
+
+    ListElem_t *new_data = (ListElem_t *) calloc (list -> capacity + 1, sizeof (list -> data[0]));
+    if (new_data == nullptr)
+    {
+        list -> err |= LIST_ALLOC_ERROR;
+        return list -> err;
+    }
+
+    int index_old = 0;
+    int index_new = 0;
+
+    for (;index_new <= list -> capacity; index_new++)
+    {
+        new_data [index_new].next  = index_new + 1;
+        new_data [index_new].prev  = index_new - 1;
+        new_data [index_new].value = list -> data [index_old].value;
+
+        index_old = list -> data [index_old].next;
+        if (index_old == 0) break;
+    }
+
+    new_data [0]        .prev = index_new;
+    new_data [index_new].next = 0;
+
+    list -> free = index_new + 1;
+
+    for (index_new++; index_new <= list -> capacity; index_new++)
+    {
+        new_data [index_new].next  = index_new + 1;
+        new_data [index_new].prev  = POISON_INDEX;
+        new_data [index_new].value = POISON_VAL;
+    }
+
+    new_data [list -> capacity].next = 0;
+
+    free (list -> data);
+    list -> data = new_data;
+
+    list -> happy = 1;
+    list -> shift = 0;
+
+    return LIST_OK;    
+}
 
 int ListExpand (List_t *list, int capacity)
 {
@@ -291,6 +370,9 @@ void List_txt_dmup (List_t *list, FILE *stream, const char *func_name, const cha
     fprintf (stream, "\tstatus   = %d\n", list -> status);
     fprintf (stream, "\tcapacity = %d\n", list -> capacity);
     fprintf (stream, "\terror    = %d\n", list -> err);
+    fprintf (stream, "\thappy    = %d\n", list -> happy);
+    fprintf (stream, "\tshift    = %d\n", list -> shift);
+    
 
     fprintf (stream, "\n\tdata[%p]:\n", list -> data);
     if (list -> data == nullptr) return;
