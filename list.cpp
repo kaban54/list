@@ -134,8 +134,9 @@ int ListInsertVal (List_t *list, int prev, val_t value)
 
     if (list -> happy)
     {
-        if      (prev == 0 && next == index + 1) list -> shift -= 1;
-        else if (next != 0)                      list -> happy  = 0;
+        if      (prev == 0 && next == index + 1             ) list -> shift -= 1;
+        else if (prev == 0 && next == 0 && list -> shift > 0) list -> shift -= 1;
+        else if (next != 0)                                   list -> happy  = 0;
     }
 
     ListVerify (list);
@@ -188,6 +189,49 @@ int ListPopVal (List_t *list, int index, val_t *value)
     return LIST_OK;
 }
 
+
+int ListGetIndex (List_t *list, int position, int *index)
+{
+    ListVerify (list);
+
+    if (index == nullptr) return LIST_NULLPTR_ARG;
+
+    if (position <= 0 || position > list -> capacity)
+    {
+        list -> err = LIST_INCORRECT_INDEX;
+        ListPrintError (list);
+        return list -> err;
+    }
+
+    if (list -> happy)
+    {
+        if (position + list -> shift > list -> capacity)
+        {
+            list -> err = LIST_INCORRECT_INDEX;
+            ListPrintError (list);
+            return list -> err;
+        }
+        *index = position + list -> shift;
+    }
+    else
+    {
+        int ind = list -> data [0].next;
+        for (position--; position > 0; position--)
+        {
+            if (ind == 0)
+            {
+                list -> err = LIST_INCORRECT_INDEX;
+                ListPrintError (list);
+                return list -> err;
+            }
+            ind = list -> data [ind].next;
+        }
+        *index = ind;
+    }
+
+    ListVerify (list);
+    return LIST_OK;
+}
 
 int ListLinearize (List_t *list)
 {

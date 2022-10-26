@@ -100,6 +100,8 @@ int ListInsertTail (List_t *list, val_t value);
 
 int ListPopVal (List_t *list, int index, val_t *value);
 
+int ListGetIndex (List_t *list, int position, int *index);
+
 int ListLinearize (List_t *list);
 
 int ListExpand (List_t *list, int capacity);
