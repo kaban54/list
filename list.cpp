@@ -1,17 +1,16 @@
 #include "list.h"
 
 
+#define ListErr(list, error)  {list -> err |= error;   \
+                                ListPrintError (list);  \
+                                return list -> err; }
+
 
 int List_ctor (List_t *list, int capacity, const char *name, const char *func_name, const char *file_name, int line)
 {
     if (list == nullptr) return LIST_NULLPTR_ARG;
 
-    if (list -> status != LIST_CREATED)
-    {
-        list -> err |= LIST_STATUS_ERROR;
-        ListPrintError (list);
-        return list -> err;
-    }
+    if (list -> status != LIST_CREATED) ListErr (list, LIST_STATUS_ERROR);
 
     list -> err |= ListSetInfo (list, name, func_name, file_name, line);
 
@@ -44,20 +43,12 @@ int ListConstructData (List_t *list, int capacity)
     if (capacity < 0)    return LIST_INCORRECT_CAPACITY;
 
     list -> data = (ListElem_t *) (calloc (capacity + 1, sizeof (list -> data [0])));
-    if (list -> data == nullptr)
-    {
-        list -> err |= LIST_ALLOC_ERROR;
-        return list -> err;
-    }
+    if (list -> data == nullptr) ListErr (list, LIST_ALLOC_ERROR);
 
     list -> capacity = capacity;
 
-    for (int index = 0; index <= capacity; index++)
-    {
-        list -> data [index].value = POISON_VAL;
-        list -> data [index].next  = index + 1;
-        list -> data [index].prev  = POISON_INDEX;
-    }
+    List_fill_free (list -> data, 0, capacity);
+
     list -> data [capacity].next = 0;
 
     list -> free = list -> data [0].next;
@@ -68,6 +59,15 @@ int ListConstructData (List_t *list, int capacity)
     return LIST_OK;
 }
 
+void List_fill_free (ListElem_t *data, int start, int end)
+{
+    for (int index = start; index <= end; index++)
+    {
+        data [index].next  = index + 1;
+        data [index].prev  = POISON_INDEX;
+        data [index].value = POISON_VAL;
+    }
+}
 
 int ListDtor (List_t *list)
 {
@@ -108,16 +108,11 @@ int ListInsertVal (List_t *list, int prev, val_t value)
 {
     ListVerify (list);
 
-    if (prev < 0 || prev > list -> capacity || list -> data [prev].prev == POISON_INDEX)
-    {
-        list -> err = LIST_INCORRECT_INDEX;
-        ListPrintError (list);
-        return list -> err;
-    }
+    if (prev < 0 || prev > list -> capacity || list -> data [prev].prev == POISON_INDEX) ListErr (list, LIST_INCORRECT_INDEX);
 
     if (!list -> free)
     {
-        if (ListExpand (list, list -> capacity == 0 ? LIST_BASE_CAPACITY : list -> capacity * 2 + 1)) return list -> err;
+        if (ListResize (list, list -> capacity == 0 ? LIST_BASE_CAPACITY : list -> capacity * 2 + 1, 0)) return list -> err;
     }
 
     int index = list -> free;
@@ -134,9 +129,9 @@ int ListInsertVal (List_t *list, int prev, val_t value)
 
     if (list -> happy)
     {
-        if      (prev == 0 && next == index + 1             ) list -> shift -= 1;
-        else if (prev == 0 && next == 0 && list -> shift > 0) list -> shift -= 1;
-        else if (next != 0)                                   list -> happy  = 0;
+        if      (  prev == 0 && next == index + 1             ) list -> shift -= 1;
+        else if (  prev == 0 && next == 0 && list -> shift > 0) list -> shift -= 1;
+        else if (!(next == 0 && prev == index - 1)            ) list -> happy  = 0;
     }
 
     ListVerify (list);
@@ -159,12 +154,7 @@ int ListPopVal (List_t *list, int index, val_t *value)
 {
     ListVerify (list);
 
-    if (index <= 0 || index > list -> capacity || list -> data [index].prev == POISON_INDEX)
-    {
-        list -> err = LIST_INCORRECT_INDEX;
-        ListPrintError (list);
-        return list -> err;
-    }
+    if (index <= 0 || index > list -> capacity || list -> data [index].prev == POISON_INDEX) ListErr (list, LIST_INCORRECT_INDEX);
 
     *value = list -> data [index].value;
 
@@ -196,21 +186,11 @@ int ListGetIndex (List_t *list, int position, int *index)
 
     if (index == nullptr) return LIST_NULLPTR_ARG;
 
-    if (position <= 0 || position > list -> capacity)
-    {
-        list -> err = LIST_INCORRECT_INDEX;
-        ListPrintError (list);
-        return list -> err;
-    }
+    if (position <= 0 || position > list -> capacity) ListErr (list, LIST_INCORRECT_INDEX);
 
     if (list -> happy)
     {
-        if (position + list -> shift > list -> capacity)
-        {
-            list -> err = LIST_INCORRECT_INDEX;
-            ListPrintError (list);
-            return list -> err;
-        }
+        if (position + list -> shift > list -> capacity) ListErr (list, LIST_INCORRECT_INDEX);
         *index = position + list -> shift;
     }
     else
@@ -218,12 +198,7 @@ int ListGetIndex (List_t *list, int position, int *index)
         int ind = list -> data [0].next;
         for (position--; position > 0; position--)
         {
-            if (ind == 0)
-            {
-                list -> err = LIST_INCORRECT_INDEX;
-                ListPrintError (list);
-                return list -> err;
-            }
+            if (ind == 0) ListErr (list, LIST_INCORRECT_INDEX);
             ind = list -> data [ind].next;
         }
         *index = ind;
@@ -236,19 +211,96 @@ int ListGetIndex (List_t *list, int position, int *index)
 int ListLinearize (List_t *list)
 {
     ListVerify (list);
+    return ListResize (list, list -> capacity);
+}
 
-    ListElem_t *new_data = (ListElem_t *) calloc (list -> capacity + 1, sizeof (list -> data[0]));
-    if (new_data == nullptr)
+int ListResize (List_t *list, int capacity, int do_linearize)
+{
+    ListVerify (list);
+
+    if (capacity < 0)                                 ListErr (list, LIST_INCORRECT_CAPACITY);
+    if (capacity < list -> capacity && !do_linearize) ListErr (list, LIST_INCORRECT_ARGS    );
+    if (capacity == list -> capacity && (!do_linearize || list -> happy)) return LIST_OK;
+
+    if (!do_linearize)
     {
-        list -> err |= LIST_ALLOC_ERROR;
-        return list -> err;
+        list -> data = (ListElem_t *) Recalloc (list -> data, capacity + 1, sizeof (list -> data [0]), list -> capacity + 1);
+        if (list -> data == nullptr) ListErr (list, LIST_ALLOC_ERROR);
+
+        List_fill_free (list -> data, list -> capacity + 1, capacity);
+
+        list -> data [capacity].next = list -> free;
+        list -> free = list -> capacity + 1;
+
+        list -> capacity = capacity;
+
+        list -> happy = 0;
+        list -> shift = 0;
+
+        ListVerify (list);
+        return LIST_OK;
     }
 
+    ListElem_t *new_data = (ListElem_t *) (calloc (capacity + 1, sizeof (list -> data [0])));
+    if (new_data == nullptr) ListErr (list, LIST_ALLOC_ERROR);
+
+    if (list -> happy)
+    {
+        int tail = list -> data [0].prev;
+        int head = list -> data [0].next;
+        
+        if (tail > capacity) list -> happy = 0;
+        else 
+        {
+            memcpy (new_data, list -> data, sizeof (list -> data[0]) * (1 + tail));
+
+            list -> free = 0;
+
+            if (head > 1)
+            {
+                List_fill_free (new_data, 1, head - 1);
+                new_data [head - 1].next = list -> free;
+                list -> free = 1;
+            }
+            if (tail < capacity)
+            {
+                List_fill_free (new_data, tail + 1, capacity);
+                new_data [capacity].next = list -> free;
+                list -> free = tail + 1;
+            }
+        }
+    }
+
+    if (!list -> happy)
+    {
+        list -> err |= List_linearize_data (list, new_data, capacity);
+        if (list -> err)
+        {
+            free (new_data);
+            ListPrintError (list);
+            return list -> err;
+        }
+        list -> happy = 1;
+        list -> shift = 0;
+    }
+
+    free (list -> data);
+    list -> data = new_data;
+    list -> capacity = capacity;
+
+    ListVerify (list);
+    return LIST_OK;
+}
+
+int List_linearize_data (List_t *list, ListElem_t *new_data, int capacity)
+{
     int index_old = 0;
     int index_new = 0;
 
     for (;index_new <= list -> capacity; index_new++)
     {
+        if (index_new > capacity) return LIST_INCORRECT_CAPACITY;
+
         new_data [index_new].next  = index_new + 1;
         new_data [index_new].prev  = index_new - 1;
         new_data [index_new].value = list -> data [index_old].value;
@@ -260,60 +312,18 @@ int ListLinearize (List_t *list)
     new_data [0]        .prev = index_new;
     new_data [index_new].next = 0;
 
-    list -> free = index_new + 1;
-
-    for (index_new++; index_new <= list -> capacity; index_new++)
+    if (index_new == capacity)
     {
-        new_data [index_new].next  = index_new + 1;
-        new_data [index_new].prev  = POISON_INDEX;
-        new_data [index_new].value = POISON_VAL;
+        list -> free = 0;
+        return LIST_OK;
     }
 
+    List_fill_free (new_data, index_new + 1, capacity);
+    list -> free = index_new + 1;
     new_data [list -> capacity].next = 0;
 
-    free (list -> data);
-    list -> data = new_data;
-
-    list -> happy = 1;
-    list -> shift = 0;
-
-    return LIST_OK;    
-}
-
-int ListExpand (List_t *list, int capacity)
-{
-    ListVerify (list);
-
-    if (capacity < list -> capacity)
-    {
-        list -> err = LIST_INCORRECT_CAPACITY;
-        ListPrintError (list);
-        return list -> err;
-    }
-
-    list -> data = (ListElem_t *) Recalloc (list -> data, capacity + 1, sizeof (list -> data [0]), list -> capacity + 1);
-    if (list -> data == nullptr)
-    {
-        list -> err = LIST_ALLOC_ERROR;
-        ListPrintError (list);
-        return list -> err;
-    }
-
-    for (int index = list -> capacity + 1; index <= capacity; index++)
-    {
-        list -> data [index].value = POISON_VAL;
-        list -> data [index].next  = index + 1;
-        list -> data [index].prev  = POISON_INDEX;   
-    }
-    list -> data [capacity].next = list -> free;
-    list -> free = (int) (list -> capacity + 1);
-
-    list -> capacity = capacity;
-
-    ListVerify (list);
     return LIST_OK;
 }
-
 
 int List_verify (List_t *list)
 {

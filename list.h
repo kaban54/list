@@ -55,6 +55,7 @@ enum LISTERRORS
     LIST_STATUS_ERROR       =  16,
     LIST_DATA_CORRUPTED     =  32,
     LIST_INFO_CORRUPTED     =  64,
+    LIST_INCORRECT_ARGS     = 128,  
 };
 
 
@@ -86,6 +87,8 @@ int ListSetInfo (List_t *list, const char *name, const char *func_name, const ch
 
 int ListConstructData (List_t *list, int capacity);
 
+void List_fill_free (ListElem_t *data, int start, int end);
+
 int ListDtor (List_t *list);
 
 int ListGetHead (List_t *list, int *head);
@@ -104,7 +107,9 @@ int ListGetIndex (List_t *list, int position, int *index);
 
 int ListLinearize (List_t *list);
 
-int ListExpand (List_t *list, int capacity);
+int ListResize (List_t *list, int capacity, int do_linearize = 1);
+
+int List_linearize_data (List_t *list, ListElem_t *new_data, int capacity);
 
 int List_verify (List_t *list);
 
