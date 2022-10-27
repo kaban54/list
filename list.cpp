@@ -392,14 +392,11 @@ int List_verify_data (List_t *list)
 
 void List_print_error (List_t *list, const char *func_name, const char *file_name, int line)
 {
-    FILE *log = fopen (LOGFILENAME, "a");
-    FILE *stream = log == nullptr ? stderr : log;
-
     int err = list == nullptr ? LIST_NULLPTR_ARG : list -> err;
     
-    fprintf (stream, "\nERROR (%d) in (%s) at (%s) at line (%d).\n", err, func_name, file_name, line);
+    printf ("\nERROR (%d) in (%s) at (%s) at line (%d).\n", err, func_name, file_name, line);
 
-    List_txt_dmup (list, stream, func_name, file_name, line);
+    List_dump (list, func_name, file_name, line);
 }
 
 void *Recalloc (void *memptr, size_t num, size_t size, size_t old_num)
