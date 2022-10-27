@@ -4,11 +4,20 @@ CC = g++
 all: list.exe
 
 
-list.exe: main.o list.o
-	$(CC) -o list.exe main.o list.o $(CFLAGS)
+list.exe: main.o list.o listdump.o
+	$(CC) -o list.exe main.o list.o listdump.o $(CFLAGS)
 
 main.o: main.cpp
 	$(CC) -o main.o main.cpp -c $(CFLAGS)
 
 list.o: list.cpp 
 	$(CC) -o list.o list.cpp -c $(CFLAGS)
+
+listdump.o: listdump.cpp 
+	$(CC) -o listdump.o listdump.cpp -c $(CFLAGS)
+
+clean:
+	rm *.o
+	clear
+	
+.PHONY: clean

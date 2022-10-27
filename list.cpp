@@ -248,7 +248,7 @@ int ListResize (List_t *list, int capacity, int do_linearize)
     {
         int tail = list -> data [0].prev;
         int head = list -> data [0].next;
-        
+
         if (tail > capacity) list -> happy = 0;
         else 
         {
@@ -401,61 +401,6 @@ void List_print_error (List_t *list, const char *func_name, const char *file_nam
 
     List_txt_dmup (list, stream, func_name, file_name, line);
 }
-
-void List_txt_dmup (List_t *list, FILE *stream, const char *func_name, const char *file_name, int line)
-{
-    if (stream == nullptr) stream = stdout;
-
-    if (func_name == nullptr) func_name = "(NULL)";
-    if (file_name == nullptr) file_name = "(NULL)";
-
-    fprintf (stream, "\nList dump from (%s) at (%s) at line (%d):\n", func_name, file_name, line);
-
-    if (list == nullptr)
-    {
-        fprintf (stream, "Unknown list (nullptr).\n");
-        return;
-    }
-
-    if (list -> err & LIST_INFO_CORRUPTED) fprintf (stream, "Unknown list (info corrupted):\n");
-    else fprintf (stream, "list [%p] \"%s\" at (%s) at (%s)(%d):\n", list, list -> info.     name, list -> info.func_name, 
-                                                                           list -> info.file_name, list -> info.     line);
-    fprintf (stream, "{\n");
-    fprintf (stream, "\tstatus   = %d\n", list -> status);
-    fprintf (stream, "\tcapacity = %d\n", list -> capacity);
-    fprintf (stream, "\terror    = %d\n", list -> err);
-    fprintf (stream, "\thappy    = %d\n", list -> happy);
-    fprintf (stream, "\tshift    = %d\n", list -> shift);
-    
-
-    fprintf (stream, "\n\tdata[%p]:\n", list -> data);
-    if (list -> data == nullptr) return;
-    
-    fprintf (stream, "\thead     = %d\n", list -> data[0].next);
-    fprintf (stream, "\ttail     = %d\n", list -> data[0].prev);
-    fprintf (stream, "\tfree     = %d\n", list -> free);
-
-    fprintf (stream, "\n");
-
-    fprintf (stream, "\tindex:");
-    for (int index = 0; index <= list -> capacity; index++) fprintf (stream, "  %4d", index);
-    
-    fprintf (stream, "\n\tvalue:");
-    for (int index = 0; index <= list -> capacity; index++)
-    {
-        if (list -> data[index].value == POISON_VAL) fprintf (stream, "   PSN");
-        else fprintf (stream, "  %4d", list -> data[index].value);
-    }
-
-    fprintf (stream, "\n\tnext: ");
-    for (int index = 0; index <= list -> capacity; index++) fprintf (stream, "  %4d", list -> data[index].next );
-    
-    fprintf (stream, "\n\tprev: ");
-    for (int index = 0; index <= list -> capacity; index++) fprintf (stream, "  %4d", list -> data[index].prev );
-
-    fprintf (stream, "\n}\n");
-}
-
 
 void *Recalloc (void *memptr, size_t num, size_t size, size_t old_num)
 {

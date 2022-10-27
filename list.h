@@ -10,7 +10,7 @@
 typedef int val_t;
 
 
-const char *const LOGFILENAME = "listlog.txt";
+const char *const LOGFILENAME = "listlog.html";
 
 const val_t POISON_VAL   = 0xF5410007;
 const int   POISON_INDEX = -1;
@@ -71,6 +71,8 @@ enum LISTSTATUS
 
 #define ListTxtDump(list, stream) List_txt_dmup (list, stream, __PRETTY_FUNCTION__, __FILE__, __LINE__)
 
+#define ListDump(list) List_dump (list, __PRETTY_FUNCTION__, __FILE__, __LINE__)
+
 #define ListVerify(list)   {int _list_verify_err = List_verify (list);  \
                             if (_list_verify_err)                       \
                             {                                           \
@@ -118,6 +120,10 @@ int List_verify_data (List_t *list);
 void List_print_error (List_t *list, const char *func_name, const char *file_name, int line);
 
 void List_txt_dmup (List_t *list, FILE *stream, const char *func_name, const char *file_name, int line);
+
+void List_dump (List_t *list, const char *func_name, const char *file_name, int line);
+
+void Generate_img (List_t *list, int imgnum);
 
 void *Recalloc (void *memptr, size_t num, size_t size, size_t old_num);
 
