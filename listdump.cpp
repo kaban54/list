@@ -83,7 +83,7 @@ void List_dump (List_t *list, const char *func_name, const char *file_name, int 
             fclose (numfile);
         }
         Generate_img (list, imgnum);
-        fprintf (log, "<img src=\"./images/dumpimg%d.png\">", imgnum);
+        fprintf (log, "<img src=\"./images/dumpimg%d.png\", width=\"80%%\">", imgnum);
     }
 
     fclose (log);
@@ -152,9 +152,9 @@ void Generate_img (List_t *list, int imgnum)
     }
     fprintf (graph, "}");
 
+    fclose (graph);
 
     char cmd [64] = "";
     sprintf (cmd, "dot -T png -o ./images/dumpimg%d.png %s", imgnum, GRAPHFILE);
     system (cmd);
-    //printf ("(%s)", cmd);
 }

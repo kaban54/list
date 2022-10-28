@@ -2,7 +2,7 @@
 
 
 #define ListErr(list, error)  {list -> err |= error;   \
-                                ListPrintError (list);  \
+                                ListPrintError (list); \
                                 return list -> err; }
 
 
@@ -12,9 +12,9 @@ int List_ctor (List_t *list, int capacity, const char *name, const char *func_na
 
     if (list -> status != LIST_CREATED) ListErr (list, LIST_STATUS_ERROR);
 
-    list -> err |= ListSetInfo (list, name, func_name, file_name, line);
+    list -> err |= List_set_info (list, name, func_name, file_name, line);
 
-    list -> err |= ListConstructData (list, capacity);
+    list -> err |= List_construct_data (list, capacity);
 
     list -> happy  = 1;
     list -> shift  = 0;
@@ -25,7 +25,7 @@ int List_ctor (List_t *list, int capacity, const char *name, const char *func_na
     return LIST_OK;
 }
 
-int ListSetInfo (List_t *list, const char *name, const char *func_name, const char *file_name, int line)
+int List_set_info (List_t *list, const char *name, const char *func_name, const char *file_name, int line)
 {
     if (list == nullptr) return LIST_NULLPTR_ARG;
 
@@ -37,7 +37,7 @@ int ListSetInfo (List_t *list, const char *name, const char *func_name, const ch
     return LIST_OK;
 }
 
-int ListConstructData (List_t *list, int capacity)
+int List_construct_data (List_t *list, int capacity)
 {
     if (list == nullptr) return LIST_NULLPTR_ARG;
     if (capacity < 0)    return LIST_INCORRECT_CAPACITY;
@@ -207,6 +207,7 @@ int ListGetIndex (List_t *list, int position, int *index)
     ListVerify (list);
     return LIST_OK;
 }
+
 
 int ListLinearize (List_t *list)
 {

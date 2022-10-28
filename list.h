@@ -85,9 +85,9 @@ enum LISTSTATUS
 
 int List_ctor (List_t *list, int capacity, const char *name, const char *func_name, const char *file_name, int line);
 
-int ListSetInfo (List_t *list, const char *name, const char *func_name, const char *file_name, int line);
+int List_set_info (List_t *list, const char *name, const char *func_name, const char *file_name, int line);
 
-int ListConstructData (List_t *list, int capacity);
+int List_construct_data (List_t *list, int capacity);
 
 void List_fill_free (ListElem_t *data, int start, int end);
 
