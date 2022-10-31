@@ -64,11 +64,8 @@ void List_txt_dmup (List_t *list, FILE *stream, const char *func_name, const cha
 
 void List_dump (List_t *list, const char *func_name, const char *file_name, int line)
 {
-    FILE *log = fopen (LOGFILENAME, "a");
-    if (log == nullptr) return;
-
-    fprintf (log, "<pre>\n");
-    List_txt_dmup (list, log, func_name, file_name, line);
+    fprintf (LOG, "<pre>\n");
+    List_txt_dmup (list, LOG, func_name, file_name, line);
 
     if (list != nullptr && list -> data != nullptr && list -> capacity >= 0)
     {
@@ -83,10 +80,8 @@ void List_dump (List_t *list, const char *func_name, const char *file_name, int 
             fclose (numfile);
         }
         Generate_img (list, imgnum);
-        fprintf (log, "<img src=\"./images/dumpimg%d.png\", width=\"80%%\">", imgnum);
+        fprintf (LOG, "<img src=\"./images/dumpimg%d.png\", width=\"80%%\">", imgnum);
     }
-
-    fclose (log);
 }
 
 
