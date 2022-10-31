@@ -104,7 +104,7 @@ int ListGetTail (List_t *list, int *tail)
 }
 
 
-int ListInsertVal (List_t *list, int prev, val_t value)
+int ListInsert (List_t *list, int prev, val_t value)
 {
     ListVerify (list);
 
@@ -141,16 +141,16 @@ int ListInsertVal (List_t *list, int prev, val_t value)
 int ListInsertHead (List_t *list, val_t value)
 {
     ListVerify (list);
-    return ListInsertVal (list, 0, value);
+    return ListInsert (list, 0, value);
 }
 
 int ListInsertTail (List_t *list, val_t value)
 {   
     ListVerify (list);
-    return ListInsertVal (list, list -> data[0].prev, value);
+    return ListInsert (list, list -> data[0].prev, value);
 }
 
-int ListPopVal (List_t *list, int index, val_t *value)
+int ListRemove (List_t *list, int index, val_t *value)
 {
     ListVerify (list);
 

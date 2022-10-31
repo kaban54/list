@@ -17,6 +17,8 @@ const int   POISON_INDEX = -1;
 
 const size_t LIST_BASE_CAPACITY = 15;
 
+extern FILE *LOG;
+
 struct ListInfo_t
 {
     const char*      name;
@@ -97,13 +99,13 @@ int ListGetHead (List_t *list, int *head);
 
 int ListGetTail (List_t *list, int *tail);
 
-int ListInsertVal (List_t *list, int prev, val_t value);
+int ListInsert (List_t *list, int prev, val_t value);
 
 int ListInsertHead (List_t *list, val_t value);
 
 int ListInsertTail (List_t *list, val_t value);
 
-int ListPopVal (List_t *list, int index, val_t *value);
+int ListRemove (List_t *list, int index, val_t *value);
 
 int ListGetIndex (List_t *list, int position, int *index);
 
